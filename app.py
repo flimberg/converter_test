@@ -48,6 +48,7 @@ def plot_waveform():
 
         # Read MiniSEED file using ObsPy
         st = read(input_path)
+        st = st.detrend("demean")
         tr = st[0]  # Use the first trace in the stream
 
         # Apply bandpass filter if cutoffs are provided
