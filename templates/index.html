@@ -57,19 +57,19 @@
     </style>
 </head>
 <body>
-    <h1>Listen to your seismogram - mseed to wav converter</h1>
-    <h4>by Fabian Limberger</h4>
+    <h1>Listen to your seismogram</h1>
+    <h4>mseed to wav converter by Fabian Limberger </h4>
     <form class="upload-form" id="plotForm">
-        <label for="file">Upload File:</label><br>
+        <h3>Upload mseed-File</h3>
         <input type="file" id="file" name="file" required><br>
         <label for="low_cutoff">Low Frequency Cutoff (Hz):</label><br>
-        <input type="number" id="low_cutoff" name="low_cutoff" min="0" step="0.1"><br>
+        <input type="number" id="low_cutoff" name="low_cutoff" min="0" step="1"><br>
         <label for="high_cutoff">High Frequency Cutoff (Hz):</label><br>
-        <input type="number" id="high_cutoff" name="high_cutoff" min="0" step="0.1"><br>
-        <button type="button" id="plotButton">Plot Waveform and Spectrogram</button>
+        <input type="number" id="high_cutoff" name="high_cutoff" min="0" step="1"><br>
+        <button type="button" id="plotButton">Upload and Plot data</button>
     </form>
     <div id="progressContainer">
-        <h3>Uploading File...</h3>
+        <h3>Some patience please ...</h3>
         <div id="progressBar">
             <div></div>
         </div>
@@ -82,7 +82,8 @@
         <input type="hidden" id="filenameInput" name="filename">
         <input type="hidden" id="lowCutoffInput" name="low_cutoff">
         <input type="hidden" id="highCutoffInput" name="high_cutoff">
-        <label for="pitch">Select Pitch:</label>
+        <h3>Pitch you data to higher frequencies</h3>
+        <label for="pitch">Factor:</label>
         <select name="pitch" id="pitch">
             <option value="1" selected>1 (Default)</option>
             <option value="2">2</option>
