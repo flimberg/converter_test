@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Convert mSEED to WAV</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 50px;
+        }
+        .upload-form, .plot-container {
+            margin: auto;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 10px;
+            max-width: 600px;
+            background-color: #f9f9f9;
+        }
+        input[type="file"], input[type="number"], select {
+            margin: 10px 0;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        img {
+            max-width: 100%;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Easy Converter - MiniSEED to WAV</h1>
+    <h4>by Fabian Limberger</h4>
+    <form class="upload-form" id="plotForm">
+        <label for="file">Upload File:</label><br>
+        <input type="file" id="file" name="file" required><br>
+        <label for="low_cutoff">Low Frequency Cutoff (Hz):</label><br>
+        <input type="number" id="low_cutoff" name="low_cutoff" min="0" step="0.1"><br>
+        <label for="high_cutoff">High Frequency Cutoff (Hz):</label><br>
+        <input type="number" id="high_cutoff" name="high_cutoff" min="0" step="0.1"><br>
+        <button type="button" id="plotButton">Plot Waveform and Spectrogram</button>
+    </form>
+    <div class="plot-container" id="plotContainer" style="display: none;">
+        <h3>Waveform and Spectrogram</h3>
+        <img id="waveformPlot" src="" alt="Waveform and Spectrogram">
+    </div>
+    <form class="upload-form" action="/convert" method="POST">
+        <input type="hidden" id="filenameInput" name="filename">
+        <input type="hidden" id="lowCutoffInput" name="low_cutoff">
+        <input type="hidden" id="highCutoffInput" name="high_cutoff">
+        <label for="pitch">Select Pitch:</label>
+        <select name="pitch" id="pitch">
+            <option value="1" selected>1 (Default)</option>
+            <option value="2">2</option>
+            <option value="4">4</option>
+            <option value="8">8</option>
+            <option value="16">16</option>
+        </select><br>
+        <button type="submit">Convert to WAV</button>
+    </form>
+    <script>
+        document.getElementById('plotButton').addEventListener('click', async () => {
+            const fileInput = document.getElementById('file');
+            const lowCutoff = document.getElementById('low_cutoff').value || 0;
+            const highCutoff = document.getElementById('high_cutoff').value || 0;
+
+            if (!fileInput.files.length) {
+                alert("Please upload a file to plot.");
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+            formData.append('low_cutoff', lowCutoff);
+            formData.append('high_cutoff', highCutoff);
+
+            const response = await fetch('/plot', {
+                method: 'POST',
+                body: formData
+            });
+
+            const result = await response.json();
+            if (result.error) {
+                alert(result.error);
+            } else {
+                document.getElementById('waveformPlot').src = `data:image/png;base64,${result.plot}`;
+                document.getElementById('plotContainer').style.display = 'block';
+
+                // Save the filename and filter parameters for conversion
+                document.getElementById('filenameInput').value = result.filename;
+                document.getElementById('lowCutoffInput').value = lowCutoff;
+                document.getElementById('highCutoffInput').value = highCutoff;
+            }
+        });
+    </script>
+</body>
+</html>
