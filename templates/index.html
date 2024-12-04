@@ -9,6 +9,7 @@
             font-family: Arial, sans-serif;
             text-align: center;
             padding: 50px;
+            background-color: #FFEDA8;
         }
         .upload-form, .plot-container {
             margin: auto;
@@ -18,15 +19,37 @@
             max-width: 600px;
             background-color: #f9f9f9;
         }
-        input[type="file"], input[type="number"], select {
+        .filter-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
             margin: 10px 0;
         }
+        .filter-container label {
+            font-size: 14px;
+        }
+        .filter-container input {
+            width: 80px;
+            padding: 5px;
+            font-size: 14px;
+        }
+        .upload-form, .plot-container {
+            margin: 20px auto; /* Adds vertical spacing between boxes */
+            padding: 20px;
+            border: 2px solid #000;
+            border-radius: 10px;
+            max-width: 600px;
+            background-color: #C0D5EF;
+        }
+        
+        
         button {
             padding: 10px 20px;
             font-size: 16px;
             background-color: #007bff;
             color: white;
-            border: none;
+            border: 1px solid #000;
             border-radius: 5px;
             cursor: pointer;
         }
@@ -39,7 +62,7 @@
         }
         #progressBar {
             width: 100%;
-            background-color: #e0e0e0;
+            background-color: #ffffff;
             border-radius: 10px;
             overflow: hidden;
             height: 20px;
@@ -47,27 +70,37 @@
         #progressBar div {
             height: 100%;
             width: 0%;
-            background-color: #007bff;
+            background-color: #000000;
             transition: width 0.2s;
         }
         img {
             max-width: 100%;
             margin-top: 20px;
+            border: 1px solid #000;
+        }
+        .upload-form[action="/convert"] {
+            display: none;
         }
     </style>
 </head>
 <body>
     <h1>Listen to your seismogram</h1>
-    <h4>mseed to wav converter by Fabian Limberger </h4>
+    <h4>mseed to wav converter by Fabian Limberger</h4>
     <form class="upload-form" id="plotForm">
         <h3>Upload mseed-File</h3>
-        <input type="file" id="file" name="file" required><br>
-        <label for="low_cutoff">Low Frequency Cutoff (Hz):</label><br>
-        <input type="number" id="low_cutoff" name="low_cutoff" min="0" step="1"><br>
-        <label for="high_cutoff">High Frequency Cutoff (Hz):</label><br>
-        <input type="number" id="high_cutoff" name="high_cutoff" min="0" step="1"><br>
+        <input type="file" id="file" name="file" required><br><br>
+        
+        <div class="filter-container">
+            <label for="low_cutoff">Optional filter: Low Cutoff (Hz):</label>
+            <input type="number" id="low_cutoff" name="low_cutoff" min="0" step="1">
+            <label for="high_cutoff">High Cutoff (Hz):</label>
+            <input type="number" id="high_cutoff" name="high_cutoff" min="0" step="1">
+        </div><br>
+        
         <button type="button" id="plotButton">Upload and Plot data</button>
+        <button type="button" id="testDataButton" style="background-color: red;">Try with test data</button>
     </form>
+    
     <div id="progressContainer">
         <h3>Some patience please ...</h3>
         <div id="progressBar">
@@ -83,14 +116,16 @@
         <input type="hidden" id="lowCutoffInput" name="low_cutoff">
         <input type="hidden" id="highCutoffInput" name="high_cutoff">
         <h3>Pitch your data to higher frequencies</h3>
+        <p>(e.g., 2 means doubling the frequency and bisecting the duration)</p>
         <label for="pitch">Factor:</label>
         <select name="pitch" id="pitch">
-            <option value="1" selected>1 (Default)</option>
+            <option value="1">1</option>
             <option value="2">2</option>
-            <option value="4">4</option>
+            <option value="4" selected>4</option>
             <option value="8">8</option>
             <option value="16">16</option>
-        </select><br>
+        </select><br><br>
+        
         <button type="submit">Convert to WAV</button>
     </form>
     <script>
@@ -100,6 +135,7 @@
             const highCutoff = document.getElementById('high_cutoff').value || 0;
             const progressContainer = document.getElementById('progressContainer');
             const progressBar = document.getElementById('progressBar').firstElementChild;
+            const pitchForm = document.querySelector('.upload-form[action="/convert"]');
 
             if (!fileInput.files.length) {
                 alert("Please upload a file to plot.");
@@ -114,11 +150,9 @@
             // Show the progress bar
             progressContainer.style.display = 'block';
 
-            // Send the request with progress tracking
             const xhr = new XMLHttpRequest();
             xhr.open('POST', '/plot', true);
 
-            // Update the progress bar
             xhr.upload.onprogress = (event) => {
                 if (event.lengthComputable) {
                     const percentComplete = (event.loaded / event.total) * 100;
@@ -126,7 +160,6 @@
                 }
             };
 
-            // Handle the response
             xhr.onload = () => {
                 progressContainer.style.display = 'none';
                 if (xhr.status === 200) {
@@ -134,24 +167,66 @@
                     document.getElementById('waveformPlot').src = `data:image/png;base64,${result.plot}`;
                     document.getElementById('plotContainer').style.display = 'block';
 
-                    // Save the filename and filter parameters for conversion
                     document.getElementById('filenameInput').value = result.filename;
                     document.getElementById('lowCutoffInput').value = lowCutoff;
                     document.getElementById('highCutoffInput').value = highCutoff;
+
+                    // Show the pitch form
+                    pitchForm.style.display = 'block';
                 } else {
                     alert('An error occurred: ' + xhr.responseText);
                 }
             };
 
-            // Handle errors
             xhr.onerror = () => {
                 progressContainer.style.display = 'none';
                 alert('An error occurred during the upload.');
             };
 
-            // Send the form data
             xhr.send(formData);
         });
+
+        document.getElementById('testDataButton').addEventListener('click', () => {
+            const lowCutoff = document.getElementById('low_cutoff').value || 0;
+            const highCutoff = document.getElementById('high_cutoff').value || 0;
+            const progressContainer = document.getElementById('progressContainer');
+            const progressBar = document.getElementById('progressBar').firstElementChild;
+            const pitchForm = document.querySelector('.upload-form[action="/convert"]');
+
+            progressContainer.style.display = 'block';
+
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', '/plot/testdata', true);
+            xhr.setRequestHeader('Content-Type', 'application/json');
+
+            xhr.onload = () => {
+                progressContainer.style.display = 'none';
+                if (xhr.status === 200) {
+                    const result = JSON.parse(xhr.responseText);
+                    document.getElementById('waveformPlot').src = `data:image/png;base64,${result.plot}`;
+                    document.getElementById('plotContainer').style.display = 'block';
+
+                    document.getElementById('filenameInput').value = result.filename;
+                    document.getElementById('lowCutoffInput').value = lowCutoff;
+                    document.getElementById('highCutoffInput').value = highCutoff;
+
+                    // Show the pitch form
+                    pitchForm.style.display = 'block';
+                } else {
+                    alert('An error occurred: ' + xhr.responseText);
+                }
+            };
+
+            xhr.onerror = () => {
+                progressContainer.style.display = 'none';
+                alert('An error occurred during the upload.');
+            };
+
+            xhr.send(JSON.stringify({ low_cutoff: lowCutoff, high_cutoff: highCutoff }));
+        });
+
+
+
 
         // Auto-reloading functionality
         const url = `https://mseed2wav.onrender.com/`; // Replace with your Render URL
